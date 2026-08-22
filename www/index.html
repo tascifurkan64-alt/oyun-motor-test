@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Oyun Motoru — Test Derlemesi</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 1.1rem;
+    background: #0b1a2b; color: #eaf2fb;
+    font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+    text-align: center; padding: 2rem 1.5rem;
+  }
+  h1 { font-size: 1.25rem; margin: 0; }
+  p.sub { color: #9db3c7; margin: 0; font-size: 0.9rem; max-width: 320px; }
+  button {
+    font-size: 1rem; padding: 0.85rem 1.6rem; border-radius: 999px;
+    border: none; background: #ffb347; color: #22160a; font-weight: 600;
+    cursor: pointer; min-width: 240px;
+  }
+  button:active { transform: scale(0.97); }
+  button:disabled { opacity: 0.5; }
+  #log {
+    width: 100%; max-width: 420px; text-align: left; font-size: 0.8rem;
+    background: rgba(255,255,255,0.06); border-radius: 12px; padding: 0.9rem 1rem;
+    white-space: pre-wrap; line-height: 1.5; max-height: 40vh; overflow-y: auto;
+  }
+</style>
+</head>
+<body>
+  <h1>🏮 Oyun Motoru — Test Derlemesi</h1>
+  <p class="sub">Bu ekran sadece Capacitor + AdMob mimarisinin gerçekten çalıştığını doğrulamak için. Fener Adası / Mercan Koyu / Liman Meydanı'nın gerçek oyun ekranı değil.</p>
+  <button id="btnInterstitial">Geçiş Reklamını Göster</button>
+  <button id="btnRewarded">Ödüllü Reklamı Göster</button>
+  <div id="log">Hazır. Bir butona bas.</div>
+
+<script>
+  const logEl = document.getElementById('log');
+  function log(msg) {
+    const t = new Date().toLocaleTimeString('tr-TR');
+    logEl.textContent += '\n[' + t + '] ' + msg;
+    logEl.scrollTop = logEl.scrollHeight;
+  }
+
+  // Google'ın herkese açık, resmi TEST reklam kimlikleri — gerçek hesapla ilgisi yok,
+  // gerçek oyun içeriğine geçince gerçek AdMob kimlikleriyle değiştirilecek.
+  const TEST_IDS = {
+    interstitial: 'ca-app-pub-3940256099942544/1033173712',
+    rewarded: 'ca-app-pub-3940256099942544/5224354917',
+  };
+
+  let AdMob = null;
+  let ready = false;
+
+  async function initAdmob() {
+    if (!window.Capacitor || !window.Capacitor.Plugins || !window.Capacitor.Plugins.AdMob) {
+      log('UYARI: AdMob eklentisi bulunamadı. Bu sayfa telefona kurulan uygulama içinde açılmalı, düz tarayıcıda değil.');
+      return;
+    }
+    AdMob = window.Capacitor.Plugins.AdMob;
+    try {
+      await AdMob.initialize();
+      ready = true;
+      log('AdMob başlatıldı. Test reklamları hazır. ✅');
+    } catch (e) {
+      log('AdMob başlatma hatası: ' + (e && e.message ? e.message : e));
+    }
+  }
+
+  document.getElementById('btnInterstitial').addEventListener('click', async () => {
+    if (!ready) { log('AdMob henüz hazır değil.'); return; }
+    try {
+      log('Geçiş reklamı hazırlanıyor...');
+      await AdMob.prepareInterstitial({ adId: TEST_IDS.interstitial, isTesting: true });
+      log('Geçiş reklamı hazır, gösteriliyor...');
+      await AdMob.showInterstitial();
+      log('Geçiş reklamı gösterildi. ✅');
+    } catch (e) {
+      log('Geçiş reklamı hatası: ' + (e && e.message ? e.message : e));
+    }
+  });
+
+  document.getElementById('btnRewarded').addEventListener('click', async () => {
+    if (!ready) { log('AdMob henüz hazır değil.'); return; }
+    try {
+      log('Ödüllü reklam hazırlanıyor...');
+      await AdMob.prepareRewardVideoAd({ adId: TEST_IDS.rewarded, isTesting: true });
+      log('Ödüllü reklam hazır, gösteriliyor...');
+      await AdMob.showRewardVideoAd();
+      log('Ödüllü reklam gösterildi. ✅');
+    } catch (e) {
+      log('Ödüllü reklam hatası: ' + (e && e.message ? e.message : e));
+    }
+  });
+
+  document.addEventListener('DOMContentLoaded', initAdmob);
+  if (document.readyState !== 'loading') initAdmob();
+</script>
+</body>
+</html>
